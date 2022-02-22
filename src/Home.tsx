@@ -33,20 +33,8 @@ const splTokenName = process.env.REACT_APP_SPL_TOKEN_NAME ? process.env.REACT_AP
 
 const WalletContainer = styled.div`
   display: flex;
-  background-image: url('background.jpg');
-  flex-direction: row;
-  flex-wrap: wrap;
-  justify-content: center;
-  background-position-x: center;
-  background-size: contain;
-  background-repeat: no-repeat;
-    height: 360px;
-    background-position: center;
-    background-repeat: no-repeat;
-    background-size: 100% 100%;
-    @media (min-width: 1500px) {
-        height: 440px;
-    }
+  justify-content: space-between;
+  margin:0 auto;
 `;
 const NFT = styled(Paper)`
   min-width: 400px;
@@ -69,6 +57,15 @@ const Footer = styled.div`
   height:60px;
   background-color: #002454;
   color: white;
+  @media only screen and (min-width: 1800px) {
+    height:80px;
+  }
+  @media only screen and (min-width: 1800px) {
+    height:100px;
+  }
+  @media only screen and (min-width: 1800px) {
+    height:120px;
+  }
 `
 
 const ConnectButton = styled(WalletMultiButton)`
@@ -84,13 +81,14 @@ const Wallet = styled.ul`
 `;
 const MainContainer = styled.div`
   display: flex;
+  width: 100%;
   flex-direction: column;
-  margin-top: 20px;
-  margin-right: 4%;
-  margin-left: 4%;
-  padding-bottom: 40px
   text-align: center;
   justify-content: center;
+`;
+
+const HeaderWrapper = styled.div`
+    width: 1000px;
 `;
 
 const MintContainer = styled.div`
@@ -98,15 +96,15 @@ const MintContainer = styled.div`
   flex-direction: row;
   flex: 1 1 auto;
   flex-wrap: wrap;
-  gap: 20px;
+  align-items:  center;
+  justify-content: space-between;
 `;
 
 const DesContainer = styled.div`
   display: flex;
   flex-direction: column;
-  flex: 1 1 auto;
   align-items: center;
-  padding-bottom: 40px;
+  justify-content: right;
 `;
 
 const Price = styled.div`
@@ -114,13 +112,22 @@ const Price = styled.div`
     font-weight: bold;
     font-size: 1.8em !important;
     color: #002454;
-    margin: 20px;
+    margin: 20px 0;
 `;
 
 const Image = styled.img`
   height: 400px;
   width: auto;
   border-radius: 20px;
+  @media only screen and (min-width: 1400px) {
+    height: 460px;
+  }
+  @media only screen and (min-width: 1600px) {
+    height: 580px;
+  }
+  @media only screen and (min-width: 1800px) {
+    height: 700px;
+  }
 `;
 
 export interface HomeProps {
@@ -428,12 +435,11 @@ const Home = (props: HomeProps) => {
     ]);
 
     return (
-        <main className="main">
-        {
-        isLoading == true ?
-          <div id="preloader"></div> :
-          <div id="preloader" style={{display: 'none'}}></div>
-        }
+        <div style={{position: 'relative'}}>
+            <div className="banner">
+                <img src="./background.jpg" />
+            </div>
+            <div className="header-wrapper">
             <WalletContainer>
                 <div className="page-links">
                     <li onClick={goToHome}><a className={`${page === 'home' ? 'page-selected' : 'page-not-selected'}`} href="/" rel="noopener noreferrer">HOME</a></li>
@@ -444,62 +450,83 @@ const Home = (props: HomeProps) => {
                     <a href={`${DISCORD_URL}`} target="_blank" rel="noreferrer"><img src={'discord.png'} alt="discord" /></a>
                 </div>
             </WalletContainer>
-            <MainContainer>
-                <br />
-                <MintContainer>
-                    <div><Image
-                        src="playaz.gif"
-                        alt="NFT To Mint" />
-                        {wallet && isActive && whitelistEnabled && (whitelistTokenBalance > 0) &&
-                            <h3>You have {whitelistTokenBalance} whitelist mint(s) remaining.</h3>}
-                    </div>
-                    <DesContainer>
-                        {wallet && !isActive && candyMachine?.state.goLiveDate &&
-                            <>
-                                <div className="progress-bar">
-                                    <div className="progress-units">
-                                        {Array.apply(null, Array(progress)).map((item, index) =>
-                                            <div className="progress-unit" key={index}></div>
-                                        )}
-                                    </div>
-                                </div>
-                                <div style={{ fontSize: '26px', color: '#002454', lineHeight: '50px', marginBottom: '20px', fontWeight: 'bold' }}>{itemsRemaining} OF {itemsAvailable} AVAILABLE</div></>}
-                        <Wallet>
-                            {wallet ?
-                                <ConnectButton /> :
-                                <ConnectButton style={{ marginTop: '110px' }}>Wallet Connect</ConnectButton>}
-                        </Wallet>
-                        {wallet &&
-                            <div>
-                                <div style={{ marginTop: '20px' }}>
-                                    {!isActive && candyMachine?.state.goLiveDate ? (
-                                        <Countdown
-                                            date={toDate(candyMachine?.state.goLiveDate)}
-                                            onMount={({ completed }) => completed && setIsActive(true)}
-                                            onComplete={() => {
-                                                setIsActive(true);
-                                            }}
-                                            renderer={renderCounter}
-                                        />) :
-                                        (<MintButton
-                                            candyMachine={candyMachine}
-                                            isMinting={isMinting}
-                                            isActive={isActive}
-                                            isSoldOut={isSoldOut}
-                                            onMint={onMint}
-                                            wallet={wallet ? true : false}
-                                            tooManyTokens={tooManyTokens >= 1}
-                                            mintable={mintable}
-                                        />)
-                                    }
-                                </div>
+            </div>
 
-                                <Price>
-                                    {whitelistEnabled && (whitelistTokenBalance > 0) ? ("Mint Price: " + whitelistPrice + " " + priceLabel) : ("Mint Price: " + price + " " + priceLabel)}
-                                </Price></div>}
-                    </DesContainer>
-                </MintContainer>
-            </MainContainer>
+            <main className="main">
+            {
+            isLoading == true ?
+            <div id="preloader"></div> :
+            <div id="preloader" style={{display: 'none'}}></div>
+            }
+
+                <MainContainer>
+                    <MintContainer>
+                        <div><Image
+                            src="playaz.gif"
+                            alt="NFT To Mint" />
+                            {wallet && isActive && whitelistEnabled && (whitelistTokenBalance > 0) &&
+                                <h3>You have {whitelistTokenBalance} whitelist mint(s) remaining.</h3>}
+                        </div>
+                        <DesContainer>
+                            {wallet && !isActive && candyMachine?.state.goLiveDate &&
+                                <>
+                                    <div className="progress-bar">
+                                        <div className="progress-units">
+                                            {Array.apply(null, Array(progress)).map((item, index) =>
+                                                <div className="progress-unit" key={index}></div>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <div style={{ fontSize: '26px', color: '#002454', lineHeight: '50px', marginBottom: '20px', fontWeight: 'bold' }}>{itemsRemaining} OF {itemsAvailable} AVAILABLE</div></>}
+                            <Wallet>
+                                {wallet ?
+                                    <ConnectButton /> :
+                                    <ConnectButton>Wallet Connect</ConnectButton>}
+                            </Wallet>
+                            {wallet &&
+                                <div>
+                                    <div style={{ marginTop: '20px' }}>
+                                        {!isActive && candyMachine?.state.goLiveDate ? (
+                                            <Countdown
+                                                date={toDate(candyMachine?.state.goLiveDate)}
+                                                onMount={({ completed }) => completed && setIsActive(true)}
+                                                onComplete={() => {
+                                                    setIsActive(true);
+                                                }}
+                                                renderer={renderCounter}
+                                            />) :
+                                            (<MintButton
+                                                candyMachine={candyMachine}
+                                                isMinting={isMinting}
+                                                isActive={isActive}
+                                                isSoldOut={isSoldOut}
+                                                onMint={onMint}
+                                                wallet={wallet ? true : false}
+                                                tooManyTokens={tooManyTokens >= 1}
+                                                mintable={mintable}
+                                            />)
+                                        }
+                                    </div>
+
+                                    <Price>
+                                        {whitelistEnabled && (whitelistTokenBalance > 0) ? ("Mint Price: " + whitelistPrice + " " + priceLabel) : ("Mint Price: " + price + " " + priceLabel)}
+                                    </Price></div>}
+                        </DesContainer>
+                    </MintContainer>
+                </MainContainer>
+                <Snackbar
+                    open={alertState.open}
+                    autoHideDuration={6000}
+                    onClose={() => setAlertState({ ...alertState, open: false })}
+                >
+                    <Alert
+                        onClose={() => setAlertState({ ...alertState, open: false })}
+                        severity={alertState.severity}
+                    >
+                        {alertState.message}
+                    </Alert>
+                </Snackbar>
+            </main>
             <Footer className="footer">
                 <div className="copyright">© 2022 COPYRIGHT</div>
                 <div>
@@ -511,19 +538,8 @@ const Home = (props: HomeProps) => {
                     <div style={{ cursor: 'pointer' }}>FAQS</div>
                 </div>
             </Footer>
-            <Snackbar
-                open={alertState.open}
-                autoHideDuration={6000}
-                onClose={() => setAlertState({ ...alertState, open: false })}
-            >
-                <Alert
-                    onClose={() => setAlertState({ ...alertState, open: false })}
-                    severity={alertState.severity}
-                >
-                    {alertState.message}
-                </Alert>
-            </Snackbar>
-        </main>
+        </div>
+
     );
 };
 
