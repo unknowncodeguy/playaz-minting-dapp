@@ -67,7 +67,7 @@ const App = () => {
     ],
     []
   );
-
+    console.log("III", candyMachineId.toString());
   return (
     <ThemeProvider theme={theme}>
       <ConnectionProvider endpoint={endpoint}>

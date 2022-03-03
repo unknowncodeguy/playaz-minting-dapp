@@ -200,6 +200,50 @@ export const getCandyMachineState = async (
   };
 };
 
+export const getCandy = async (
+  candyMachineId: anchor.web3.PublicKey,
+  connection: anchor.web3.Connection,
+): Promise<any> => {
+  const temp =  anchor.web3.Keypair.generate();
+  const tempWallet = new anchor.Wallet(temp);
+  const provider = new anchor.Provider(connection, tempWallet, {
+    preflightCommitment: 'recent',
+  }); 
+  const idl = await anchor.Program.fetchIdl(CANDY_MACHINE_PROGRAM, provider);
+
+  const program = new anchor.Program(idl, CANDY_MACHINE_PROGRAM, provider);
+  const state: any = await program.account.candyMachine.fetch(candyMachineId);
+  const itemsAvailable = state.data.itemsAvailable.toNumber();
+  const itemsRedeemed = state.itemsRedeemed.toNumber();
+  const itemsRemaining = itemsAvailable - itemsRedeemed;
+  return {
+    id: candyMachineId,
+    program,
+    state: {
+      itemsAvailable,
+      itemsRedeemed,
+      itemsRemaining,
+      isSoldOut: itemsRemaining === 0,
+      isActive:
+        state.data.goLiveDate &&
+        state.data.goLiveDate.toNumber() < new Date().getTime() / 1000 &&
+        (state.endSettings
+          ? state.endSettings.endSettingType.date
+            ? state.endSettings.number.toNumber() > new Date().getTime() / 1000
+            : itemsRedeemed < state.endSettings.number.toNumber()
+          : true),
+      goLiveDate: state.data.goLiveDate,
+      treasury: state.wallet,
+      tokenMint: state.tokenMint,
+      gatekeeper: state.data.gatekeeper,
+      endSettings: state.data.endSettings,
+      whitelistMintSettings: state.data.whitelistMintSettings,
+      hiddenSettings: state.data.hiddenSettings,
+      price: state.data.price,
+    },
+  };
+};
+
 const getMasterEdition = async (
   mint: anchor.web3.PublicKey,
 ): Promise<anchor.web3.PublicKey> => {

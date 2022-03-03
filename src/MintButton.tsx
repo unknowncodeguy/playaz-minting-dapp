@@ -34,7 +34,8 @@ export const MintButton = ({
     isSoldOut,
     wallet,
     mintable,
-    tooManyTokens
+    tooManyTokens,
+    whitelistEnabled
 }: {
     onMint: () => Promise<void>;
     candyMachine: CandyMachine | undefined;
@@ -44,6 +45,7 @@ export const MintButton = ({
     wallet: boolean;
     mintable: boolean;
     tooManyTokens: boolean;
+    whitelistEnabled:boolean;
 }) => {
     const { requestGatewayToken, gatewayStatus } = useGateway();
     const [clicked, setClicked] = useState(false);
@@ -77,8 +79,8 @@ export const MintButton = ({
                 !isActive ||
                 isVerifying ||
                 !wallet ||
-                !mintable || 
-                tooManyTokens 
+                (!mintable && !whitelistEnabled) ||
+                (tooManyTokens && !whitelistEnabled) 
             }
             onClick={async () => {
                 if (isActive && candyMachine?.state.gatekeeper && gatewayStatus !== GatewayStatus.ACTIVE) {
@@ -104,13 +106,13 @@ export const MintButton = ({
                             <CircularProgress />
                         </div>
                     ) : !mintable ? (<Countdown
-                    date={new Date(Number(localStorage.lastMintTime) + WAITING)}
-                    onComplete={() => {
-
-                    }}
-                    renderer={renderCounter}
-                />)
-                    : tooManyTokens ? ('Mint limited.') : ("MINT HERE")
+                                        date={new Date(Number(localStorage.lastMintTime) + WAITING)}
+                                        onComplete={() => {
+                                            console.log('30s passed.');
+                                        }}
+                                        renderer={renderCounter}
+                                    />)
+                    : (tooManyTokens && !whitelistEnabled) ? ('Mint limited.') : ("MINT HERE")
             ) : (candyMachine?.state.goLiveDate ? (
                 "SOON"
             ) : (

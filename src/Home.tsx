@@ -18,6 +18,7 @@ import {
     getCandyMachineState,
     mintOneToken,
     CANDY_MACHINE_PROGRAM,
+    getCandy
 } from "./candy-machine";
 import {
     TWITTER_URL,
@@ -179,71 +180,90 @@ const Home = (props: HomeProps) => {
     const rpcUrl = props.rpcHost;
 
     const refreshCandyMachineState =  async () => {
-        
-            if (!wallet) return;
+            let candy;
+            if(!wallet) {
+                candy = await getCandy(
+                    props.candyMachineId,
+                    props.connection
+                );
+            }
+            else {
+                candy = await getCandyMachineState(
+                    wallet as anchor.Wallet,
+                    props.candyMachineId,
+                    props.connection
+                );
+            }
 
-            const cndy = await getCandyMachineState(
-                wallet as anchor.Wallet,
-                props.candyMachineId,
-                props.connection
-            );
+            setCandyMachine(candy);
+            setItemsAvailable(candy.state.itemsAvailable);
+            setItemsRemaining(candy.state.itemsRemaining);
+            setItemsRedeemed(candy.state.itemsRedeemed);
+            setProgress(Math.round(28 * candy.state.itemsRemaining / candy.state.itemsAvailable));
 
-            setCandyMachine(cndy);
-            setItemsAvailable(cndy.state.itemsAvailable);
-            setItemsRemaining(cndy.state.itemsRemaining);
-            setItemsRedeemed(cndy.state.itemsRedeemed);
-            setProgress(Math.round(28 * cndy.state.itemsRemaining / cndy.state.itemsAvailable));
             var divider = 1;
             if (decimals) {
                 divider = +('1' + new Array(decimals).join('0').slice() + '0');
             }
 
             // detect if using spl-token to mint
-            if (cndy.state.tokenMint) {
+            if (candy.state.tokenMint) {
                 setPayWithSplToken(true);
                 // Customize your SPL-TOKEN Label HERE
                 // TODO: get spl-token metadata name
                 setPriceLabel(splTokenName);
-                setPrice(cndy.state.price.toNumber() / divider);
-                setWhitelistPrice(cndy.state.price.toNumber() / divider);
+                setPrice(candy.state.price.toNumber() / divider);
+                setWhitelistPrice(candy.state.price.toNumber() / divider);
             } else {
-                setPrice(cndy.state.price.toNumber() / LAMPORTS_PER_SOL);
-                setWhitelistPrice(cndy.state.price.toNumber() / LAMPORTS_PER_SOL);
+                setPrice(candy.state.price.toNumber() / LAMPORTS_PER_SOL);
+                setWhitelistPrice(candy.state.price.toNumber() / LAMPORTS_PER_SOL);
             }
 
-
-            // fetch whitelist token balance
-            if (cndy.state.whitelistMintSettings) {
+            if (candy.state.whitelistMintSettings) {
                 setWhitelistEnabled(true);
-                if (cndy.state.whitelistMintSettings.discountPrice !== null && cndy.state.whitelistMintSettings.discountPrice !== cndy.state.price) {
-                    if (cndy.state.tokenMint) {
-                        setWhitelistPrice(cndy.state.whitelistMintSettings.discountPrice?.toNumber() / divider);
+                if (candy.state.whitelistMintSettings.discountPrice !== null && candy.state.whitelistMintSettings.discountPrice !== candy.state.price) {
+                    if (candy.state.tokenMint) {
+                        setWhitelistPrice(candy.state.whitelistMintSettings.discountPrice?.toNumber() / divider);
                     } else {
-                        setWhitelistPrice(cndy.state.whitelistMintSettings.discountPrice?.toNumber() / LAMPORTS_PER_SOL);
+                        setWhitelistPrice(candy.state.whitelistMintSettings.discountPrice?.toNumber() / LAMPORTS_PER_SOL);
                     }
                 }
-                let balance = 0;
-                try {
-                    const tokenBalance =
-                        await props.connection.getTokenAccountBalance(
-                            (
-                                await getAtaForMint(
-                                    cndy.state.whitelistMintSettings.mint,
-                                    wallet.publicKey,
-                                )
-                            )[0],
-                        );
-
-                    balance = tokenBalance?.value?.uiAmount || 0;
-                } catch (e) {
-                    console.error(e);
-                    balance = 0;
-                }
-                setWhitelistTokenBalance(balance);
-                setIsActive(balance > 0);
-            } else {
+            }
+            else {
                 setWhitelistEnabled(false);
             }
+
+            if(wallet) {
+                const cndy = await getCandyMachineState(
+                    wallet as anchor.Wallet,
+                    props.candyMachineId,
+                    props.connection
+                );
+                if (cndy.state.whitelistMintSettings) {
+                    let balance = 0;
+                    try {
+                        const tokenBalance =
+                            await props.connection.getTokenAccountBalance(
+                                (
+                                    await getAtaForMint(
+                                        cndy.state.whitelistMintSettings.mint,
+                                        wallet.publicKey,
+                                    )
+                                )[0],
+                            );
+    
+                        balance = tokenBalance?.value?.uiAmount || 0;
+                    } catch (e) {
+                        console.error(e);
+                        balance = 0;
+                    }
+                    setWhitelistTokenBalance(balance);
+                    setIsActive(balance > 0);
+                }
+            }
+
+            // fetch whitelist token balance
+
         
     };
 
@@ -314,6 +334,7 @@ const Home = (props: HomeProps) => {
             document.getElementById('#identity')?.click();
             if (wallet && candyMachine?.program && wallet.publicKey) {
                 const mint = anchor.web3.Keypair.generate();
+                console.log('MINT', mint.toString());
                 const mintTxId = (
                     await mintOneToken(candyMachine, wallet.publicKey, mint)
                 )[0];
@@ -339,7 +360,6 @@ const Home = (props: HomeProps) => {
                     // update front-end amounts
                     setLastMintTime();
                     displaySuccess(mint.publicKey);
-                    setMintalbe(false);
                     setTooManyTokens(tooManyTokens + 1);
                 } else {
                     setAlertState({
@@ -386,8 +406,7 @@ const Home = (props: HomeProps) => {
             
             if (wallet) {
                 if(wallet.publicKey.toString() != localStorage.lastMintAccount) {
-                    console.log('SSS');
-                    setMintalbe(true);
+
                 }
                 const interval = window.setInterval(async() => {
                     if (localStorage.lastMintTime && localStorage.lastMintAccount) {
@@ -397,7 +416,7 @@ const Home = (props: HomeProps) => {
                             const now = new Date().getTime();
                             const diff = now - Number(lastMintTime);
                             if(diff > WAITING) {
-                                setMintalbe((mintable) => true);
+
                             }
                         }
                     }
@@ -468,7 +487,7 @@ const Home = (props: HomeProps) => {
                                 <h3>You have {whitelistTokenBalance} whitelist mint(s) remaining.</h3>}
                         </div>
                         <DesContainer>
-                            {wallet && !isActive && candyMachine?.state.goLiveDate &&
+                            {candyMachine?.state &&
                                 <>
                                     <div className="progress-bar">
                                         <div className="progress-units">
@@ -483,19 +502,12 @@ const Home = (props: HomeProps) => {
                                     <ConnectButton /> :
                                     <ConnectButton>Wallet Connect</ConnectButton>}
                             </Wallet>
-                            {wallet &&
+
+                            {
                                 <div>
                                     <div style={{ marginTop: '20px' }}>
-                                        {!isActive && candyMachine?.state.goLiveDate ? (
-                                            <Countdown
-                                                date={toDate(candyMachine?.state.goLiveDate)}
-                                                onMount={({ completed }) => completed && setIsActive(true)}
-                                                onComplete={() => {
-                                                    setIsActive(true);
-                                                }}
-                                                renderer={renderCounter}
-                                            />) :
-                                            (<MintButton
+                                        {wallet && isActive &&  
+                                            <MintButton
                                                 candyMachine={candyMachine}
                                                 isMinting={isMinting}
                                                 isActive={isActive}
@@ -503,14 +515,27 @@ const Home = (props: HomeProps) => {
                                                 onMint={onMint}
                                                 wallet={wallet ? true : false}
                                                 tooManyTokens={tooManyTokens >= 1}
-                                                mintable={mintable}
-                                            />)
+                                                mintable={true}
+                                                whitelistEnabled={whitelistEnabled}
+                                            />
+                                        }
+                                        {
+                                            candyMachine?.state?.goLiveDate && !isActive && 
+                                            <Countdown
+                                                date={toDate(candyMachine?.state?.goLiveDate)}
+                                                onMount={({ completed }) => completed && setIsActive(true)}
+                                                onComplete={() => {
+                                                    setIsActive(true);
+                                                }}
+                                                renderer={renderCounter}
+                                            />
                                         }
                                     </div>
-
                                     <Price>
                                         {whitelistEnabled && (whitelistTokenBalance > 0) ? ("Mint Price: " + whitelistPrice + " " + priceLabel) : ("Mint Price: " + price + " " + priceLabel)}
-                                    </Price></div>}
+                                    </Price>
+                                </div>
+                            }
                         </DesContainer>
                     </MintContainer>
                 </MainContainer>
