@@ -134,7 +134,7 @@ import {
     block?: BlockhashAndFeeCalculator,
   ): Promise<{ number: number; txs: { txid: string; slot: number }[] }> => {
     if (!wallet.publicKey) throw new WalletNotConnectedError();
-  
+    console.log('connection', connection);
     const unsignedTxns: Transaction[] = [];
   
     if (!block) {
@@ -339,7 +339,7 @@ import {
     return new Date().getTime() / 1000;
   };
   
-  const DEFAULT_TIMEOUT = 30000;
+  const DEFAULT_TIMEOUT = 60000;
   
   export async function sendSignedTransaction({
     signedTransaction,

@@ -54,7 +54,7 @@ REACT_APP_SOLANA_NETWORK=devnet
 This identifies the Solana network you want to connect to. Options are `devnet`, `testnet`, and `mainnet`.
 
 ```
-REACT_APP_SOLANA_RPC_HOST=https://api.devnet.solana.com
+REACT_APP_SOLANA_RPC_HOST=api.devnet.solanahttps://summer-delicate-snow.solana-devnet.quiknode.pro/3549cfe2d5426832a2fd475f4125fe4e38eed905
 ```
 
 This identifies the RPC server your web app will access the Solana network through.
