@@ -186,6 +186,8 @@ const Home = (props: HomeProps) => {
                     props.candyMachineId,
                     props.connection
                 );
+
+                setIsActive(false);
             }
             else {
                 candy = await getCandyMachineState(
@@ -193,6 +195,13 @@ const Home = (props: HomeProps) => {
                     props.candyMachineId,
                     props.connection
                 );
+
+                if(candy && !candy?.state?.goLiveDate) {
+                    setIsActive(true);
+                }
+                else {
+                    setIsActive(false);
+                }
             }
 
             setCandyMachine(candy);
@@ -258,7 +267,7 @@ const Home = (props: HomeProps) => {
                         balance = 0;
                     }
                     setWhitelistTokenBalance(balance);
-                    setIsActive(balance > 0);
+                    
                 }
             }
 
@@ -296,7 +305,6 @@ const Home = (props: HomeProps) => {
         if (whitelistTokenBalance && whitelistTokenBalance > 0) {
             let balance = whitelistTokenBalance - 1;
             setWhitelistTokenBalance(balance);
-            setIsActive(balance > 0);
         }
         setItemsRedeemed(itemsRedeemed + 1);
         const solFeesEstimation = 0.012; // approx
@@ -401,57 +409,49 @@ const Home = (props: HomeProps) => {
     };
 
 
-    useEffect(() => {
-        (async () => {
+    // useEffect(() => {
+    //     (async () => {
             
-            if (wallet) {
-                if(wallet.publicKey.toString() != localStorage.lastMintAccount) {
+    //         if (wallet) {
+    //             if(wallet.publicKey.toString() != localStorage.lastMintAccount) {
 
-                }
-                const interval = window.setInterval(async() => {
-                    if (localStorage.lastMintTime && localStorage.lastMintAccount) {
-                        const lastMintTime = localStorage.getItem("lastMintTime");
-                        const lastMintAccount = localStorage.getItem("lastMintAccount");
-                        if(wallet.publicKey.toString() == lastMintAccount) {
-                            const now = new Date().getTime();
-                            const diff = now - Number(lastMintTime);
-                            if(diff > WAITING) {
+    //             }
+    //             const interval = window.setInterval(async() => {
+    //                 if (localStorage.lastMintTime && localStorage.lastMintAccount) {
+    //                     const lastMintTime = localStorage.getItem("lastMintTime");
+    //                     const lastMintAccount = localStorage.getItem("lastMintAccount");
+    //                     if(wallet.publicKey.toString() == lastMintAccount) {
+    //                         const now = new Date().getTime();
+    //                         const diff = now - Number(lastMintTime);
+    //                         if(diff > WAITING) {
 
-                            }
-                        }
-                    }
-                }, 1000);
-                setIntervalId(interval);
-            }
-        })();
-    }, [wallet]);
+    //                         }
+    //                     }
+    //                 }
+    //             }, 1000);
+    //             setIntervalId(interval);
+    //         }
+    //     })();
+    // }, [wallet]);
 
     useEffect(() => {
         (async () => {
+            setIsLoading(true);
+            await refreshCandyMachineState();
             if (wallet) {
-                
+                setIsLoading(true);
                 const balance = await props.connection.getBalance(wallet.publicKey);
                 setBalance(balance / LAMPORTS_PER_SOL);
 
                 const nftNum = await getAllCollectibles([wallet.publicKey?.toString()], [{
                     updateAuthority: REACT_NFT_AUTORITY, collectionName: REACT_TOKEN_NAME
                 }]);
+                
                 setTooManyTokens(nftNum[0]);
             }
-        })();
-    }, [wallet, props.connection]);
-
-    useEffect(() => {
-        (async () => {
-            setIsLoading(true);
-            await refreshCandyMachineState();
             setIsLoading(false);
-        })()
-    }, [
-        wallet,
-        props.candyMachineId,
-        props.connection,
-    ]);
+        })();
+    }, [wallet, props.connection, props.candyMachineId]);
 
     return (
         <div style={{position: 'relative'}}>
@@ -514,9 +514,9 @@ const Home = (props: HomeProps) => {
                                                 isSoldOut={isSoldOut}
                                                 onMint={onMint}
                                                 wallet={wallet ? true : false}
-                                                tooManyTokens={tooManyTokens >= 1}
+                                                tooManyTokens={tooManyTokens >= 2}
                                                 mintable={true}
-                                                whitelistEnabled={whitelistEnabled}
+                                                whitelistTokenBalance={whitelistTokenBalance}
                                             />
                                         }
                                         {

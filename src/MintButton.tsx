@@ -35,7 +35,7 @@ export const MintButton = ({
     wallet,
     mintable,
     tooManyTokens,
-    whitelistEnabled
+    whitelistTokenBalance
 }: {
     onMint: () => Promise<void>;
     candyMachine: CandyMachine | undefined;
@@ -45,12 +45,11 @@ export const MintButton = ({
     wallet: boolean;
     mintable: boolean;
     tooManyTokens: boolean;
-    whitelistEnabled:boolean;
+    whitelistTokenBalance: number;
 }) => {
     const { requestGatewayToken, gatewayStatus } = useGateway();
     const [clicked, setClicked] = useState(false);
     const [isVerifying, setIsVerifying] = useState(false);
-
     const renderCounter = ({ days, hours, minutes, seconds }: any) => {
         return (    
             <span className="counter" style={{textAlign: 'center', color: 'white', display: 'block'}}>
@@ -74,13 +73,14 @@ export const MintButton = ({
     return (
         <CTAButton
             disabled={
-                candyMachine?.state.isSoldOut || isSoldOut ||
+                candyMachine?.state.isSoldOut || 
+                isSoldOut ||
                 isMinting ||
                 !isActive ||
                 isVerifying ||
                 !wallet ||
-                (!mintable && !whitelistEnabled) ||
-                (tooManyTokens && !whitelistEnabled) 
+                (whitelistTokenBalance < 1 && tooManyTokens) ||
+                !mintable
             }
             onClick={async () => {
                 if (isActive && candyMachine?.state.gatekeeper && gatewayStatus !== GatewayStatus.ACTIVE) {
@@ -112,7 +112,7 @@ export const MintButton = ({
                                         }}
                                         renderer={renderCounter}
                                     />)
-                    : (tooManyTokens && !whitelistEnabled) ? ('Mint limited.') : ("MINT HERE")
+                    : (whitelistTokenBalance < 1 && tooManyTokens) ? ('Mint limited.') : ("MINT HERE")
             ) : (candyMachine?.state.goLiveDate ? (
                 "SOON"
             ) : (
